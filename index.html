@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life OS | Personal Workspace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: url('https://images.unsplash.com/photo-1477346611705-65d1883cee1e?auto=format&fit=crop&q=80&w=2070') no-repeat center center fixed;
+            background-size: cover;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden; /* Desktop feel */
+        }
+        .glass {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .app-window { height: 350px; display: flex; flex-direction: column; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+    </style>
+</head>
+<body class="text-slate-100 h-screen w-screen p-6">
+
+    <header class="flex justify-between items-center mb-8 px-4 py-2 glass rounded-2xl shadow-2xl">
+        <div class="flex items-center gap-4">
+            <span class="font-bold tracking-widest text-indigo-400">LIFE_OS // v1.0</span>
+            <span id="weather-top" class="text-sm text-slate-300"><i class="fas fa-cloud-sun mr-1"></i> 24°C Visakhapatnam</span>
+        </div>
+        <div id="clock-top" class="font-mono text-lg">00:00:00</div>
+    </header>
+
+    <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-max h-[85vh] overflow-y-auto custom-scrollbar pb-20">
+        
+        <div class="glass p-5 rounded-3xl app-window">
+            <h3 class="flex items-center gap-2 mb-4 font-bold text-indigo-300">
+                <i class="fas fa-check-circle"></i> Focus Tasks
+            </h3>
+            <div class="flex gap-2 mb-4">
+                <input type="text" id="taskInput" placeholder="Add task..." class="w-full bg-white/5 border-none rounded-lg p-2 text-sm outline-none focus:ring-1 focus:ring-indigo-500">
+                <button onclick="addTask()" class="bg-indigo-600 px-3 rounded-lg"><i class="fas fa-plus"></i></button>
+            </div>
+            <ul id="taskList" class="flex-grow overflow-y-auto space-y-2 custom-scrollbar"></ul>
+        </div>
+
+        <div class="glass p-5 rounded-3xl app-window">
+            <h3 class="flex items-center gap-2 mb-4 font-bold text-yellow-400">
+                <i class="fas fa-sticky-note"></i> Scratchpad
+            </h3>
+            <textarea id="notesArea" placeholder="Brain dump here..." class="w-full h-full bg-transparent border-none outline-none resize-none text-sm leading-relaxed text-slate-300"></textarea>
+        </div>
+
+        <div class="glass p-5 rounded-3xl app-window">
+            <h3 class="flex items-center gap-2 mb-4 font-bold text-green-400">
+                <i class="fas fa-calendar-alt"></i> Calendar
+            </h3>
+            <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-center text-xs">
+                </div>
+        </div>
+
+        <div class="glass p-5 rounded-3xl app-window">
+            <h3 class="flex items-center gap-2 mb-4 font-bold text-pink-400">
+                <i class="fas fa-music"></i> Focus Beats
+            </h3>
+            <iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/37i9dQZF1DWWQRwui0v6vX?utm_source=generator&theme=0" width="100%" height="100%" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+        </div>
+
+        <div class="glass p-5 rounded-3xl app-window justify-center items-center text-center">
+            <i class="fas fa-sun text-6xl text-yellow-400 mb-4 animate-pulse"></i>
+            <h2 class="text-4xl font-bold">24°C</h2>
+            <p class="text-slate-400">Partly Cloudy</p>
+            <div class="mt-4 flex gap-6 text-sm text-indigo-300">
+                <span>H: 28°</span>
+                <span>L: 21°</span>
+                <span>Rain: 10%</span>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // 1. CLOCK LOGIC
+        setInterval(() => {
+            document.getElementById('clock-top').innerText = new Date().toLocaleTimeString();
+        }, 1000);
+
+        // 2. TASK LOGIC
+        let tasks = JSON.parse(localStorage.getItem('os_tasks')) || [];
+        function renderTasks() {
+            const list = document.getElementById('taskList');
+            list.innerHTML = tasks.map((t, i) => `
+                <li class="flex justify-between items-center bg-white/5 p-2 rounded-lg text-sm group">
+                    <span>${t}</span>
+                    <i onclick="removeTask(${i})" class="fas fa-times text-slate-500 hover:text-red-400 cursor-pointer opacity-0 group-hover:opacity-100"></i>
+                </li>
+            `).join('');
+            localStorage.setItem('os_tasks', JSON.stringify(tasks));
+        }
+        function addTask() {
+            const input = document.getElementById('taskInput');
+            if(input.value) { tasks.push(input.value); input.value = ''; renderTasks(); }
+        }
+        function removeTask(i) { tasks.splice(i, 1); renderTasks(); }
+        renderTasks();
+
+        // 3. NOTES LOGIC
+        const notes = document.getElementById('notesArea');
+        notes.value = localStorage.getItem('os_notes') || '';
+        notes.addEventListener('input', () => localStorage.setItem('os_notes', notes.value));
+
+        // 4. MINI CALENDAR LOGIC
+        function initCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            const days = ['S','M','T','W','T','F','S'];
+            let html = days.map(d => `<div class="font-bold text-indigo-400 mb-2">${d}</div>`).join('');
+            
+            const date = new Date();
+            const firstDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+            const totalDays = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+
+            for(let i=0; i<firstDay; i++) html += `<div></div>`;
+            for(let i=1; i<=totalDays; i++) {
+                const isToday = i === date.getDate() ? 'bg-indigo-600 rounded-full' : '';
+                html += `<div class="p-1 ${isToday}">${i}</div>`;
+            }
+            grid.innerHTML = html;
+        }
+        initCalendar();
+    </script>
+</body>
+</html>
